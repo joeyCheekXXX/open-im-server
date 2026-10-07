@@ -116,6 +116,9 @@ func (c *Client) readMessage() {
 			log.ZPanic(c.ctx, "socket have panic err:", errs.ErrPanic(r))
 		}
 		c.close()
+		// Only the reader returns this connection to the event loop for reuse.
+		// A kick may close it while the reader is still processing a message.
+		c.longConnServer.UnRegister(c)
 	}()
 
 	for {
@@ -231,7 +234,6 @@ func (c *Client) close() {
 	c.closed.Store(true)
 	c.conn.Close()
 	c.hbCancel() // Close server-initiated heartbeat.
-	c.longConnServer.UnRegister(c)
 }
 
 func (c *Client) replyMessage(ctx context.Context, binaryReq *Req, err error, resp []byte) error {
@@ -285,7 +287,7 @@ func (c *Client) KickOnlineMessage() error {
 		ReqIdentifier: WSKickOnlineMsg,
 	}
 	log.ZDebug(c.ctx, "KickOnlineMessage debug ")
-	err := c.writeBinaryMsg(resp)
+	err := c.writeBinaryMsgSync(resp)
 	c.close()
 	return err
 }
@@ -299,6 +301,14 @@ func (c *Client) PushUserOnlineStatus(data []byte) error {
 }
 
 func (c *Client) writeBinaryMsg(resp Resp) error {
+	return c.writeBinaryMsgMode(resp, false)
+}
+
+func (c *Client) writeBinaryMsgSync(resp Resp) error {
+	return c.writeBinaryMsgMode(resp, true)
+}
+
+func (c *Client) writeBinaryMsgMode(resp Resp, synchronous bool) error {
 	if c.closed.Load() {
 		return nil
 	}
@@ -316,8 +326,12 @@ func (c *Client) writeBinaryMsg(resp Resp) error {
 		if compressErr != nil {
 			return compressErr
 		}
-		return c.conn.WriteMessage(resultBuf)
+		encodedBuf = resultBuf
 	}
-
+	if synchronous {
+		if conn, ok := c.conn.(interface{ WriteMessageSync([]byte) error }); ok {
+			return conn.WriteMessageSync(encodedBuf)
+		}
+	}
 	return c.conn.WriteMessage(encodedBuf)
 }

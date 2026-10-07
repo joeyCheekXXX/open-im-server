@@ -43,3 +43,7 @@ func (o *AuthApi) ParseToken(c *gin.Context) {
 func (o *AuthApi) ForceLogout(c *gin.Context) {
 	a2r.Call(c, auth.AuthClient.ForceLogout, o.Client)
 }
+
+func (o *AuthApi) ForceLogoutByToken(c *gin.Context) {
+	a2r.Call(c, auth.AuthClient.ForceLogoutByToken, o.Client)
+}

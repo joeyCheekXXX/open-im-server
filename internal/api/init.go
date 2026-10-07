@@ -13,7 +13,7 @@ import (
 	"time"
 
 	"github.com/openimsdk/open-im-server/v3/pkg/common/config"
-	"github.com/openimsdk/tools/mw"
+	"github.com/openimsdk/open-im-server/v3/pkg/rpcmiddleware"
 	"github.com/openimsdk/tools/utils/datautil"
 	"github.com/openimsdk/tools/utils/network"
 	"google.golang.org/grpc"
@@ -50,7 +50,7 @@ func Start(ctx context.Context, index int, cfg *Config) error {
 	if err != nil {
 		return errs.WrapMsg(err, "failed to register discovery service")
 	}
-	client.AddOption(mw.GrpcClient(), grpc.WithTransportCredentials(insecure.NewCredentials()),
+	client.AddOption(rpcmiddleware.GrpcClient(), grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, "round_robin")))
 
 	var (

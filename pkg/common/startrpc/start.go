@@ -35,10 +35,10 @@ import (
 
 	kdisc "github.com/openimsdk/open-im-server/v3/pkg/common/discoveryregister"
 	"github.com/openimsdk/open-im-server/v3/pkg/common/prommetrics"
+	"github.com/openimsdk/open-im-server/v3/pkg/rpcmiddleware"
 	"github.com/openimsdk/tools/discovery"
 	"github.com/openimsdk/tools/errs"
 	"github.com/openimsdk/tools/log"
-	"github.com/openimsdk/tools/mw"
 	"github.com/openimsdk/tools/utils/network"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -135,7 +135,7 @@ func Start[T any](ctx context.Context, discovery *conf.Discovery, prometheusConf
 	}
 
 	defer client.Close()
-	client.AddOption(mw.GrpcClient(), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, "round_robin")))
+	client.AddOption(rpcmiddleware.GrpcClient(), grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithDefaultServiceConfig(fmt.Sprintf(`{"LoadBalancingPolicy": "%s"}`, "round_robin")))
 
 	if len(clientOptions) > 0 {
 		client.AddOption(clientOptions...)
@@ -146,10 +146,10 @@ func Start[T any](ctx context.Context, discovery *conf.Discovery, prometheusConf
 	if prometheusConfig.Enable {
 		// cusMetrics := prommetrics.GetGrpcCusMetrics(rpcRegisterName, share)
 		// reg, metric, _ = prommetrics.NewGrpcPromObj(cusMetrics)
-		// options = append(options, mw.GrpcServer(), grpc.StreamInterceptor(metric.StreamServerInterceptor()),
+		// options = append(options, rpcmiddleware.GrpcServer(), grpc.StreamInterceptor(metric.StreamServerInterceptor()),
 		//	grpc.UnaryInterceptor(metric.UnaryServerInterceptor()))
 		options = append(
-			options, mw.GrpcServer(),
+			options, rpcmiddleware.GrpcServer(),
 			prommetricsUnaryInterceptor(rpcRegisterName),
 			prommetricsStreamInterceptor(rpcRegisterName),
 		)
@@ -202,7 +202,7 @@ func Start[T any](ctx context.Context, discovery *conf.Discovery, prometheusConf
 			// }
 		}()
 	} else {
-		options = append(options, mw.GrpcServer())
+		options = append(options, rpcmiddleware.GrpcServer())
 	}
 
 	listener, port, err := getAutoPort()

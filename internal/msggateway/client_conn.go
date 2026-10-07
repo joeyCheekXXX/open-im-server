@@ -24,6 +24,33 @@ type ClientConn interface {
 type websocketMessage struct {
 	MessageType int
 	Data        []byte
+	done        chan error
+}
+
+// WriteMessageSync waits until the kick notification has reached the socket.
+func (c *websocketClientConn) WriteMessageSync(data []byte) error {
+	return c.writeMessageSync(websocket.BinaryMessage, data)
+}
+
+func (c *websocketClientConn) writeMessageSync(messageType int, data []byte) error {
+	done := make(chan error, 1)
+	timer := time.NewTimer(3 * time.Second)
+	defer timer.Stop()
+	select {
+	case c.writer <- &websocketMessage{MessageType: messageType, Data: data, done: done}:
+	case <-c.done:
+		return ErrConnClosed
+	case <-timer.C:
+		return ErrWriteFull
+	}
+	select {
+	case err := <-done:
+		return err
+	case <-c.done:
+		return ErrConnClosed
+	case <-timer.C:
+		return ErrWriteFull
+	}
 }
 
 func NewWebSocketClientConn(conn *websocket.Conn, readLimit int64, readTimeout time.Duration, pingInterval time.Duration) ClientConn {
@@ -101,11 +128,18 @@ func (c *websocketClientConn) loopSend() {
 		case <-c.done:
 			return
 		case msg := <-c.writer:
+			if msg.done != nil {
+				_ = c.conn.SetWriteDeadline(time.Now().Add(3 * time.Second))
+			}
 			switch msg.MessageType {
 			case websocket.TextMessage, websocket.BinaryMessage:
 				err = c.conn.WriteMessage(msg.MessageType, msg.Data)
 			default:
 				err = c.conn.WriteControl(msg.MessageType, msg.Data, time.Time{})
+			}
+			if msg.done != nil {
+				msg.done <- err
+				_ = c.conn.SetWriteDeadline(time.Time{})
 			}
 			if err != nil {
 				_ = c.closeBy(err)

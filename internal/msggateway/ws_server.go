@@ -40,6 +40,7 @@ type LongConnServer interface {
 	Validate(s any) error
 	SetDiscoveryRegistry(ctx context.Context, client discovery.SvcDiscoveryRegistry, config *Config) error
 	KickUserConn(client *Client) error
+	KickConnectionByToken(ctx context.Context, userID string, platformID int, token string) error
 	UnRegister(c *Client)
 	SetKickHandlerInfo(i *kickHandler)
 	SubUserOnlineStatus(ctx context.Context, client *Client, data *Req) ([]byte, error)
@@ -52,7 +53,8 @@ type WsServer struct {
 	msgGatewayConfig  *Config
 	port              int
 	wsMaxConnNum      int64
-	registerChan      chan *Client
+	registerChan      chan *clientRegistration
+	kickTokenChan     chan *tokenKick
 	unregisterChan    chan *Client
 	kickHandlerChan   chan *kickHandler
 	clients           UserMap
@@ -77,6 +79,19 @@ type kickHandler struct {
 	clientOK   bool
 	oldClients []*Client
 	newClient  *Client
+}
+
+type clientRegistration struct {
+	client *Client
+	done   chan error
+	ready  func() error
+}
+
+type tokenKick struct {
+	userID     string
+	platformID int
+	token      string
+	done       chan error
 }
 
 func (ws *WsServer) SetDiscoveryRegistry(ctx context.Context, disCov discovery.SvcDiscoveryRegistry, config *Config) error {
@@ -155,7 +170,8 @@ func NewWsServer(msgGatewayConfig *Config, opts ...Option) *WsServer {
 				return new(Client)
 			},
 		},
-		registerChan:    make(chan *Client, 1000),
+		registerChan:    make(chan *clientRegistration, 1000),
+		kickTokenChan:   make(chan *tokenKick, 1000),
 		unregisterChan:  make(chan *Client, 1000),
 		kickHandlerChan: make(chan *kickHandler, 1000),
 		validate:        v,
@@ -168,27 +184,14 @@ func NewWsServer(msgGatewayConfig *Config, opts ...Option) *WsServer {
 
 func (ws *WsServer) Run(done chan error) error {
 	var (
-		client       *Client
 		netErr       error
 		shutdownDone = make(chan struct{}, 1)
 	)
 
 	server := http.Server{Addr: ":" + stringutil.IntToString(ws.port), Handler: nil}
 
-	go func() {
-		for {
-			select {
-			case <-shutdownDone:
-				return
-			case client = <-ws.registerChan:
-				ws.registerClient(client)
-			case client = <-ws.unregisterChan:
-				ws.unregisterClient(client)
-			case onlineInfo := <-ws.kickHandlerChan:
-				ws.multiTerminalLoginChecker(onlineInfo.clientOK, onlineInfo.oldClients, onlineInfo.newClient)
-			}
-		}
-	}()
+	go ws.runClientEvents(shutdownDone)
+
 	netDone := make(chan struct{}, 1)
 	go func() {
 		http.HandleFunc("/", ws.wsHandler)
@@ -508,13 +511,7 @@ func (ws *WsServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 		log.ZWarn(connContext, "websocket upgrade failed", err)
 		return
 	}
-	if connContext.ShouldSendResp() {
-		if err := conn.WriteMessage(websocket.TextMessage, wsSuccessResponse); err != nil {
-			log.ZWarn(connContext, "WriteMessage first response", err)
-			return
-		}
-	}
-	log.ZDebug(connContext, "new conn", "token", connContext.GetToken())
+	log.ZDebug(connContext, "new conn", "userID", connContext.GetUserID())
 
 	var pingInterval time.Duration
 	if connContext.GetPlatformID() == constant.WebPlatformID {
@@ -526,6 +523,39 @@ func (ws *WsServer) wsHandler(w http.ResponseWriter, r *http.Request) {
 	client.ResetClient(connContext, NewWebSocketClientConn(conn, maxMessageSize, pongWait, pingInterval), ws)
 
 	// Register the client with the server and start message processing
-	ws.registerChan <- client
-	go client.readMessage()
+	registration := &clientRegistration{client: client, done: make(chan error, 1)}
+	if connContext.ShouldSendResp() {
+		registration.ready = func() error {
+			return client.conn.(*websocketClientConn).writeMessageSync(websocket.TextMessage, wsSuccessResponse)
+		}
+	}
+	ws.registerChan <- registration
+	if err := <-registration.done; err != nil {
+		// No reader or unregister event exists for a rejected registration.
+		client.hbCancel()
+		if connContext.ShouldSendResp() {
+			data, _ := json.Marshal(apiresp.ParseError(err))
+			_ = conn.WriteMessage(websocket.TextMessage, data)
+		}
+		_ = conn.Close()
+		ws.clientPool.Put(client)
+		return
+	}
+}
+
+func (ws *WsServer) runClientEvents(shutdownDone <-chan struct{}) {
+	for {
+		select {
+		case <-shutdownDone:
+			return
+		case registration := <-ws.registerChan:
+			registration.done <- ws.registerValidatedClient(registration)
+		case kick := <-ws.kickTokenChan:
+			kick.done <- ws.kickConnectionsByToken(kick)
+		case client := <-ws.unregisterChan:
+			ws.unregisterClient(client)
+		case onlineInfo := <-ws.kickHandlerChan:
+			ws.checkRemoteLogin(onlineInfo.newClient)
+		}
+	}
 }
