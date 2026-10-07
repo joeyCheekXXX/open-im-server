@@ -1,6 +1,6 @@
-url: http://127.0.0.1:10006/callbackExample
+url: http://127.0.0.1:8888/callback
 beforeSendSingleMsg:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
   # Only the contentType in allowedTypes will send the callback.
@@ -14,7 +14,7 @@ beforeSendSingleMsg:
   # If not set, all contentType messages will through this filter.
   deniedTypes: []
 beforeUpdateUserInfoEx:
-  enable:  false
+  enable:  true
   timeout: 5
   failedContinue: true
 afterUpdateUserInfoEx:
@@ -30,12 +30,12 @@ afterSendSingleMsg:
   allowedTypes: []
   deniedTypes: []
 beforeSendGroupMsg:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
   # See beforeSendSingleMsg comment.
   allowedTypes: []
-  deniedTypes: []
+  deniedTypes: ["1000-5000"]
 beforeMsgModify:
   enable: false
   timeout: 5
@@ -77,29 +77,29 @@ beforeGroupOnlinePush:
   timeout: 5
   failedContinue: true
 beforeAddFriend:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 beforeUpdateUserInfo:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterUpdateUserInfo:
   enable: false
   timeout: 5
 beforeCreateGroup:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterCreateGroup:
   enable: false
   timeout: 5
 beforeMemberJoinGroup:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 beforeSetGroupMemberInfo:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterSetGroupMemberInfo:
@@ -109,13 +109,13 @@ afterQuitGroup:
   enable: false
   timeout: 5
 afterKickGroupMember:
-  enable: false
+  enable: true
   timeout: 5
 afterDismissGroup:
-  enable: false
+  enable: true
   timeout: 5
 beforeApplyJoinGroup:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterGroupMsgRead:
@@ -125,17 +125,17 @@ afterSingleMsgRead:
   enable: false
   timeout: 5
 beforeUserRegister:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterUserRegister:
-  enable: false
+  enable: true
   timeout: 5
 afterTransferGroupOwner:
   enable: false
   timeout: 5
 beforeSetFriendRemark:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterSetFriendRemark:
@@ -148,45 +148,45 @@ afterJoinGroup:
   enable: false
   timeout: 5
 beforeInviteUserToGroup:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterSetGroupInfo:
   enable: false
   timeout: 5
 beforeSetGroupInfo:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterSetGroupInfoEx:
   enable: false
   timeout: 5
 beforeSetGroupInfoEx:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterRevokeMsg:
   enable: false
   timeout: 5
 beforeAddBlack:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue:
 afterAddFriend:
   enable: false
   timeout: 5
 beforeAddFriendAgree:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterAddFriendAgree:
-  enable: false
+  enable: true
   timeout: 5
 afterDeleteFriend:
   enable: false
   timeout: 5
 beforeImportFriends:
-  enable: false
+  enable: true
   timeout: 5
   failedContinue: true
 afterImportFriends:

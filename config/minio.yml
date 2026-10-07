@@ -9,7 +9,12 @@ sessionToken:
 # Internal address of the MinIO server
 internalAddress: localhost:10005
 # External address of the MinIO server, accessible from outside. Supports both HTTP and HTTPS using a domain name
-externalAddress: http://external_ip:10005
+# 本机：
+# externalAddress: http://localhost:10005
+# 局域网 HTTP：
+# externalAddress: http://192.168.0.18:10005
+# Cloudflare Tunnel：
+externalAddress: https://chat-minio-29375.bye-bye.dev
 # Flag to enable or disable public read access to the bucket
 publicRead: false
 

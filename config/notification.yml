@@ -1,22 +1,31 @@
+# 通道系统通知。每项控制一类关系/群事件要不要往会话落系统消息、计未读、离线推。
+# 关系事件（onFriendAdded、onGroupMemberAdded 等）不受 isSendMsg 影响，照常推。
+#
+# 共用字段：
+#   isSendMsg         是否往会话落一条系统消息并可能改 latestMsg。false=静默同步。
+#   reliabilityLevel  投递可靠性。官方已废弃，固定 1（仅在线）。2 曾表示必达。
+#   unreadCount       是否计入未读。仅 isSendMsg=true 时生效。
+#   offlinePush       系统级离线推送。第一期三端不接 FCM/APNs/Web Push，enable 保持 false。
+#     enable          是否发这条离线推送。
+#     title           离线推送标题。enable=false 时不发出。
+#     desc            离线推送摘要。
+#     ext             离线推送扩展字段。
+#   defaultTips.tips  落会话时的默认文案。多数项没有；有则填在该项下。
+
+#############################group##################################
+
+# 建群。群会话落一条建群系统消息。
 groupCreated:
-  isSendMsg: true
-# Reliability level of the message sending.
-# Set to 1 to send only when online, 2 for guaranteed delivery.
+  isSendMsg: false
   reliabilityLevel: 1
-# This setting is effective only when 'isSendMsg' is true.
-# It controls whether to count unread messages.
   unreadCount: false
-# Configuration for offline push notifications.
   offlinePush:
-    # Enables or disables offline push notifications.
     enable: false
-    # Title for the notification when a group is created.
     title: create group title
-    # Description for the notification.
     desc: create group desc
-    # Additional information for the notification.
     ext: create group ext
 
+# 改群资料（综合项：名/头像/简介等）。产品改群走业务接口，不靠这条出气泡。
 groupInfoSet:
   isSendMsg: false
   reliabilityLevel: 1
@@ -27,7 +36,7 @@ groupInfoSet:
     desc: groupInfoSet desc
     ext: groupInfoSet ext
 
-
+# 入群申请已提交。申请不进会话，只走入群申请列表。
 joinGroupApplication:
   isSendMsg: false
   reliabilityLevel: 1
@@ -38,8 +47,9 @@ joinGroupApplication:
     desc: joinGroupApplication desc
     ext: joinGroupApplication ext
 
+# 成员退群。群会话落一条退群系统消息。
 memberQuit:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -48,6 +58,7 @@ memberQuit:
     desc: memberQuit desc
     ext: memberQuit ext
 
+# 入群申请被接受。进群提示走 memberEnter，不另落一条「申请通过」。
 groupApplicationAccepted:
   isSendMsg: false
   reliabilityLevel: 1
@@ -58,6 +69,7 @@ groupApplicationAccepted:
     desc: groupApplicationAccepted desc
     ext: groupApplicationAccepted ext
 
+# 入群申请被拒绝。拒绝不进会话。
 groupApplicationRejected:
   isSendMsg: false
   reliabilityLevel: 1
@@ -68,9 +80,9 @@ groupApplicationRejected:
     desc: groupApplicationRejected desc
     ext: groupApplicationRejected ext
 
-
+# 转让群主。群会话落一条转让系统消息。
 groupOwnerTransferred:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -79,8 +91,9 @@ groupOwnerTransferred:
     desc: groupOwnerTransferred desc
     ext: groupOwnerTransferred ext
 
+# 踢人。群会话落一条踢人系统消息。踢人只让对方离开本群，不列入群黑名单。
 memberKicked:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -89,8 +102,9 @@ memberKicked:
     desc: memberKicked desc
     ext: memberKicked ext
 
+# 邀请入群。群会话落一条邀请系统消息。
 memberInvited:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -99,8 +113,9 @@ memberInvited:
     desc: memberInvited desc
     ext: memberInvited ext
 
+# 成员进入（直入或审批通过后进群）。群会话落入群提示。
 memberEnter:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -109,8 +124,9 @@ memberEnter:
     desc: memberEnter desc
     ext: memberEnter ext
 
+# 解散群。群会话落一条解散系统消息。
 groupDismissed:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -119,8 +135,9 @@ groupDismissed:
     desc: groupDismissed desc
     ext: groupDismissed ext
 
+# 全员禁言开启。群会话落一条禁言系统消息。
 groupMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -129,8 +146,9 @@ groupMuted:
     desc: groupMuted desc
     ext: groupMuted ext
 
+# 全员禁言关闭。群会话落一条取消禁言系统消息。
 groupCancelMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -141,9 +159,9 @@ groupCancelMuted:
   defaultTips:
     tips: group Cancel Muted
 
-
+# 单人禁言。产品没有单人禁言，保持通道默认即可。
 groupMemberMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -152,8 +170,9 @@ groupMemberMuted:
     desc: groupMemberMuted desc
     ext: groupMemberMuted ext
 
+# 取消单人禁言。产品没有单人禁言，保持通道默认即可。
 groupMemberCancelMuted:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -162,6 +181,7 @@ groupMemberCancelMuted:
     desc: groupMemberCancelMuted desc
     ext: groupMemberCancelMuted ext
 
+# 改群成员资料（群内昵称等）。不往会话落消息。
 groupMemberInfoSet:
   isSendMsg: false
   reliabilityLevel: 1
@@ -172,8 +192,9 @@ groupMemberInfoSet:
     desc: groupMemberInfoSet desc
     ext: groupMemberInfoSet ext
 
+# 改群公告。通道会往群会话落一条；产品上群公告挂在群上，不是会话消息。
 groupInfoSetAnnouncement:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -182,9 +203,9 @@ groupInfoSetAnnouncement:
     desc: groupInfoSetAnnouncement desc
     ext: groupInfoSetAnnouncement ext
 
-
+# 改群名。群会话落一条改名系统消息。
 groupInfoSetName:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -193,8 +214,9 @@ groupInfoSetName:
     desc: groupInfoSetName desc
     ext: groupInfoSetName ext
 
-
 #############################friend#################################
+
+# 好友申请已发出。申请不进会话，只走好友申请列表。
 friendApplicationAdded:
   isSendMsg: false
   reliabilityLevel: 1
@@ -205,8 +227,11 @@ friendApplicationAdded:
     desc: Somebody applies to add you as a friend
     ext: Somebody applies to add you as a friend
 
+# 必须 false。import_friend（恢复好友）与同意申请都走这条 1201。
+# 恢复没有申请记录，defaultTips 为空；若 isSendMsg=true，空通知会写成
+# 会话最近消息，对端重启后预览被占住。成为好友气泡由业务 worker 写，不靠通道。
 friendApplicationApproved:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
@@ -215,6 +240,7 @@ friendApplicationApproved:
     desc: Someone applies to add your friend application
     ext: Someone applies to add your friend application
 
+# 拒绝好友申请。拒绝不进会话。
 friendApplicationRejected:
   isSendMsg: false
   reliabilityLevel: 1
@@ -225,6 +251,7 @@ friendApplicationRejected:
     desc: Someone rejected your friend application
     ext: Someone rejected your friend application
 
+# 必须 false。成为好友气泡由业务 after 回调入队写入，不靠通道 1204。
 friendAdded:
   isSendMsg: false
   reliabilityLevel: 1
@@ -235,6 +262,7 @@ friendAdded:
     desc: We have become friends
     ext: We have become friends
 
+# 删除好友。删除只解自己这边；提示只在本机出现，不写入消息历史。
 friendDeleted:
   isSendMsg: false
   reliabilityLevel: 1
@@ -245,6 +273,7 @@ friendDeleted:
     desc: deleted a friend
     ext: deleted a friend
 
+# 改好友备注。备注只对自己可见，不进会话。
 friendRemarkSet:
   isSendMsg: false
   reliabilityLevel: 1
@@ -255,6 +284,7 @@ friendRemarkSet:
     desc: Your friend's profile has been changed
     ext: Your friend's profile has been changed
 
+# 拉黑。拉黑不解除好友；拒收提示只在本机，不写入消息历史。
 blackAdded:
   isSendMsg: false
   reliabilityLevel: 1
@@ -265,6 +295,7 @@ blackAdded:
     desc: blocked a user
     ext: blocked a user
 
+# 取消拉黑。立刻回到好友表，不必再申请；不进会话。
 blackDeleted:
   isSendMsg: false
   reliabilityLevel: 1
@@ -275,6 +306,7 @@ blackDeleted:
     desc: Remove a blocked user
     ext: Remove a blocked user
 
+# 好友资料变更（通道侧同步）。不往会话落消息。
 friendInfoUpdated:
   isSendMsg: false
   reliabilityLevel: 1
@@ -285,7 +317,9 @@ friendInfoUpdated:
     desc: friend info updated
     ext: friend info updated
 
-#####################user#########################
+#############################user###################################
+
+# 自己的公开资料变更。不往会话落消息。
 userInfoUpdated:
   isSendMsg: false
   reliabilityLevel: 1
@@ -296,6 +330,7 @@ userInfoUpdated:
     desc: userInfo updated
     ext: userInfo updated
 
+# 在线状态变更。不往会话落消息。
 userStatusChanged:
   isSendMsg: false
   reliabilityLevel: 1
@@ -306,7 +341,9 @@ userStatusChanged:
     desc: user status changed
     ext: user status changed
 
-#####################conversation#########################
+#############################conversation###########################
+
+# 会话行变更（置顶、免打扰等同步）。不另落一条会话消息。
 conversationChanged:
   isSendMsg: false
   reliabilityLevel: 1
@@ -317,8 +354,9 @@ conversationChanged:
     desc: conversation changed
     ext: conversation changed
 
+# 阅后即焚开关。产品没有阅后即焚；保持通道默认。
 conversationSetPrivate:
-  isSendMsg: true
+  isSendMsg: false
   reliabilityLevel: 1
   unreadCount: false
   offlinePush:
