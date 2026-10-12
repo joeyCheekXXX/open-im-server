@@ -1,4 +1,4 @@
-url: http://127.0.0.1:8888/callback
+url: http://127.0.0.1:8890/callback
 beforeSendSingleMsg:
   enable: true
   timeout: 5
