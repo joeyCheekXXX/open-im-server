@@ -1,0 +1,75 @@
+# 精确路径白名单；默认拒绝未列出的接口。不要放行整个 /friend/ 或 /group/。
+# 登录校验；管理员及用户 token 签发由业务服务完成。
+/auth/parse_token 1;
+
+# SDK 用户资料与用户命令读取；资料修改走业务服务。
+/user/get_users_info 1;
+/user/process_user_command_get 1;
+/user/process_user_command_get_all 1;
+
+# 好友、申请和黑名单读取及增量同步；关系修改全部走业务服务。
+/friend/get_friend_apply_list 1;
+/friend/get_designated_friend_apply 1;
+/friend/get_self_friend_apply_list 1;
+/friend/get_friend_list 1;
+/friend/get_designated_friends 1;
+/friend/get_black_list 1;
+/friend/get_specified_blacks 1;
+/friend/get_incremental_blacks 1;
+/friend/get_friend_id 1;
+/friend/get_specified_friends_info 1;
+/friend/get_incremental_friends 1;
+/friend/get_full_friend_user_ids 1;
+/friend/get_self_unhandled_apply_count 1;
+
+# 群资料、成员、申请读取及增量同步；群关系与权限修改走业务服务。
+/group/get_groups_info 1;
+/group/get_group_member_list 1;
+/group/get_group_members_info 1;
+/group/get_joined_group_list 1;
+/group/get_recv_group_applicationList 1;
+/group/get_user_req_group_applicationList 1;
+/group/get_group_abstract_info 1;
+/group/get_incremental_join_groups 1;
+/group/get_incremental_group_members 1;
+/group/get_incremental_group_members_batch 1;
+/group/get_full_group_member_user_ids 1;
+/group/get_full_join_group_ids 1;
+/group/get_group_application_unhandled_count 1;
+
+# 会话读取、同步、置顶和免打扰由 SDK 管理。
+/conversation/get_all_conversations 1;
+/conversation/get_conversation 1;
+/conversation/get_conversations 1;
+/conversation/set_conversations 1;
+/conversation/get_full_conversation_ids 1;
+/conversation/get_incremental_conversations 1;
+/conversation/get_owner_conversation 1;
+
+# SDK 消息同步、已读、清空和删除己方消息；发送和撤回走业务服务。
+/msg/newest_seq 1;
+/msg/pull_msg_by_seq 1;
+/msg/mark_msgs_as_read 1;
+/msg/mark_conversation_as_read 1;
+/msg/get_conversations_has_read_and_max_seq 1;
+/msg/set_conversation_has_read_seq 1;
+/msg/clear_conversation_msg 1;
+/msg/user_clear_all_msg 1;
+/msg/delete_msgs 1;
+/msg/check_msg_is_send_success 1;
+/msg/get_server_time 1;
+
+# 客户端推送及诊断日志上传。
+/third/fcm_update_token 1;
+/third/set_app_badge 1;
+/third/logs/upload 1;
+
+# SDK 上传文件的控制接口；文件 GET /object/* 另行放行。
+/object/part_limit 1;
+/object/part_size 1;
+/object/initiate_multipart_upload 1;
+/object/auth_sign 1;
+/object/complete_multipart_upload 1;
+/object/access_url 1;
+/object/initiate_form_data 1;
+/object/complete_form_data 1;

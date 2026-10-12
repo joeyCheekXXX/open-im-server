@@ -3,6 +3,31 @@ networks:
     driver: bridge
 
 services:
+  nginx:
+    image: "${OPENIM_NGINX_IMAGE:-nginx:1.30.5-alpine}"
+    restart: unless-stopped
+    ports:
+      - "${OPENIM_NGINX_BIND_IP:-0.0.0.0}:${OPENIM_NGINX_API_PORT:-10080}:8080"
+      - "${OPENIM_NGINX_BIND_IP:-0.0.0.0}:${OPENIM_NGINX_WS_PORT:-10081}:8081"
+    environment:
+      OPENIM_API_UPSTREAM: "${OPENIM_NGINX_API_UPSTREAM:-host.docker.internal:10002}"
+      OPENIM_WS_UPSTREAM: "${OPENIM_NGINX_WS_UPSTREAM:-host.docker.internal:10001}"
+      OPENIM_PUBLIC_API_URL: "${OPENIM_NGINX_PUBLIC_API_URL:-}"
+      NGINX_ENVSUBST_FILTER: "^(OPENIM_API_UPSTREAM|OPENIM_WS_UPSTREAM|OPENIM_PUBLIC_API_URL)$$"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./deployments/nginx/templates:/etc/nginx/templates:ro
+      - ./deployments/nginx/client-api-allowlist.map:/etc/nginx/openim/client-api-allowlist.map:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - openim
+
   mongodb:
     image: "${MONGO_IMAGE}"
     ports:

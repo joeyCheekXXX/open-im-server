@@ -1,0 +1,137 @@
+# Compose 中的 OPENIM_* 环境变量由官方 Nginx entrypoint 展开。
+upstream openim_api {
+    server ${OPENIM_API_UPSTREAM};
+    keepalive 32;
+}
+
+upstream openim_ws {
+    server ${OPENIM_WS_UPSTREAM};
+}
+
+map $uri $openim_client_api_allowed {
+    default 0;
+    include /etc/nginx/openim/client-api-allowlist.map;
+}
+
+map "$request_method:$uri" $openim_object_download_allowed {
+    default 0;
+    ~^GET:/object/.+ 1;
+}
+
+map "$openim_client_api_allowed:$openim_object_download_allowed" $openim_request_allowed {
+    default 0;
+    ~^1: 1;
+    "0:1" 1;
+}
+
+map "$request_method:$openim_client_api_allowed:$openim_object_download_allowed" $openim_method_allowed {
+    default 0;
+    "POST:1:0" 1;
+    "OPTIONS:1:0" 1;
+    ~^GET:[01]:1$ 1;
+}
+
+# TLS 在外层终止时，显式配置公网 API 地址，保证对象 URL 使用 HTTPS。
+map "${OPENIM_PUBLIC_API_URL}" $openim_public_api_url {
+    "" $scheme://$http_host;
+    default "${OPENIM_PUBLIC_API_URL}";
+}
+
+map $http_upgrade $openim_connection_upgrade {
+    default upgrade;
+    "" close;
+}
+
+# WS query 中包含 token；日志只记路径，不记录 query 或认证头。
+log_format openim_gateway '$remote_addr [$time_local] '
+                         '"$request_method $uri $server_protocol" '
+                         '$status $body_bytes_sent $request_time';
+
+server {
+    listen 8080;
+    server_name _;
+    server_tokens off;
+    access_log /dev/stdout openim_gateway;
+    client_max_body_size 30m;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location / {
+        default_type application/json;
+        add_header Access-Control-Allow-Origin "*" always;
+        add_header Access-Control-Allow-Methods "POST, GET, OPTIONS" always;
+        add_header Access-Control-Allow-Headers "Content-Type, token, operationID" always;
+        add_header Access-Control-Max-Age 600 always;
+
+        if ($openim_request_allowed = 0) {
+            return 403 '{"error":"client_endpoint_forbidden"}';
+        }
+        if ($openim_method_allowed = 0) {
+            return 405 '{"error":"method_not_allowed"}';
+        }
+        if ($request_method = OPTIONS) {
+            return 204;
+        }
+
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Request-Api $openim_public_api_url;
+        proxy_hide_header Access-Control-Allow-Origin;
+        proxy_hide_header Access-Control-Allow-Methods;
+        proxy_hide_header Access-Control-Allow-Headers;
+        proxy_hide_header Access-Control-Allow-Credentials;
+        proxy_hide_header Access-Control-Max-Age;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 60s;
+        # 使用与白名单相同的规范化路径，避免检查路径与上游路径不同。
+        proxy_pass http://openim_api/;
+    }
+}
+
+server {
+    listen 8081;
+    server_name _;
+    server_tokens off;
+    access_log /dev/stdout openim_gateway;
+    # 普通上游连接错误也可能附带 WS query，避免把 token 写入错误日志。
+    error_log /dev/stderr crit;
+
+    location = /healthz {
+        access_log off;
+        default_type text/plain;
+        return 200 "ok\n";
+    }
+
+    location = / {
+        if ($request_method != GET) {
+            return 405;
+        }
+        if ($http_upgrade !~* ^websocket$) {
+            return 426;
+        }
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $openim_connection_upgrade;
+        proxy_set_header Host $http_host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+        proxy_buffering off;
+        proxy_pass http://openim_ws/;
+    }
+
+    location / {
+        return 403;
+    }
+}
