@@ -38,6 +38,7 @@ config/notification.yaml
 
 ### OpenIM deploy ###
 deployments/openim-server/charts
+/deployments/nginx/**/*.conf
 
 # files used by the developer
 .idea.md

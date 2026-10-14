@@ -4,6 +4,7 @@ networks:
 
 services:
   nginx:
+    container_name: nginx
     image: "${OPENIM_NGINX_IMAGE:-nginx:1.30.5-alpine}"
     restart: unless-stopped
     ports:
