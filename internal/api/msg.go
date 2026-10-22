@@ -184,6 +184,9 @@ func (m *MessageApi) getSendMsgReq(c *gin.Context, req apistruct.SendMsg) (sendM
 		return nil, errs.WrapMsg(err, "failed to decode message content")
 	}
 	log.ZDebug(c, "getSendMsgReq", "decodedContent", data)
+	if err := validateMediaReferences(data); err != nil {
+		return nil, errs.WrapMsg(err, "invalid media reference")
+	}
 	if err := m.validate.Struct(data); err != nil {
 		return nil, errs.WrapMsg(err, "validation error")
 	}

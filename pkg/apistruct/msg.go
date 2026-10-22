@@ -20,7 +20,7 @@ type PictureBaseInfo struct {
 	Size   int64  `mapstructure:"size"`
 	Width  int32  `mapstructure:"width"  validate:"required"`
 	Height int32  `mapstructure:"height" validate:"required"`
-	Url    string `mapstructure:"url"    validate:"required"`
+	Url    string `mapstructure:"url"`
 }
 
 type PictureElem struct {
@@ -33,7 +33,7 @@ type PictureElem struct {
 type SoundElem struct {
 	UUID      string `mapstructure:"uuid"`
 	SoundPath string `mapstructure:"soundPath"`
-	SourceURL string `mapstructure:"sourceUrl" validate:"required"`
+	SourceURL string `mapstructure:"sourceUrl"`
 	DataSize  int64  `mapstructure:"dataSize"`
 	Duration  int64  `mapstructure:"duration"  validate:"required,min=1"`
 }
@@ -41,14 +41,14 @@ type SoundElem struct {
 type VideoElem struct {
 	VideoPath      string `mapstructure:"videoPath"`
 	VideoUUID      string `mapstructure:"videoUUID"`
-	VideoURL       string `mapstructure:"videoUrl"       validate:"required"`
+	VideoURL       string `mapstructure:"videoUrl"`
 	VideoType      string `mapstructure:"videoType"      validate:"required"`
 	VideoSize      int64  `mapstructure:"videoSize"      validate:"required"`
 	Duration       int64  `mapstructure:"duration"       validate:"required"`
 	SnapshotPath   string `mapstructure:"snapshotPath"`
 	SnapshotUUID   string `mapstructure:"snapshotUUID"`
 	SnapshotSize   int64  `mapstructure:"snapshotSize"`
-	SnapshotURL    string `mapstructure:"snapshotUrl"    validate:"required"`
+	SnapshotURL    string `mapstructure:"snapshotUrl"`
 	SnapshotWidth  int32  `mapstructure:"snapshotWidth"  validate:"required"`
 	SnapshotHeight int32  `mapstructure:"snapshotHeight" validate:"required"`
 }
