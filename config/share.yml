@@ -12,7 +12,8 @@ rpcRegisterName:
 
 imAdminUserID: [ imAdmin ]
 
-# 1: For Android, iOS, Windows, Mac, and web platforms, only one instance can be online at a time
+# 1: One login per platform, including independent GLB (13).
+# GLB deployments require policy 1; policy 5 groups non-PC clients and cannot preserve mobile/Web coexistence.
 multiLogin:
   policy: 1
   maxNumOneEnd: 30
